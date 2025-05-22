@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenMind - AI Plant Recommender</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+    <style>
+        .mood-input {
+            height: 150px;
+            resize: none;
+        }
+        .plant-card {
+            transition: transform 0.3s;
+        }
+        #recommendations {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="#">🌱 GreenMind AI</a>
+        </div>
+    </nav>
+
+    <!-- Mood Analyzer Section -->
+    <section class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h2 class="text-center mb-4">Find Your Perfect Plant Companion</h2>
+                <textarea class="form-control mood-input mb-3" 
+                    placeholder="How are you feeling today? Describe your mood or environment..."></textarea>
+                <button class="btn btn-success w-100" onclick="analyzeMood()">Get Plant Recommendation</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recommendations Section -->
+    <section id="recommendations" class="container my-5">
+        <h3 class="text-center mb-4">Recommended Plants</h3>
+        <div class="row" id="plantResults"></div>
+    </section>
+
+    <!-- ML Section -->
+    <script>
+        // Plant dataset with mood features
+        const plants = [
+            { 
+                name: 'Peace Lily', 
+                features: [0.8, 0.2, 0.7], // [stress, energy, air_purification]
+                mood: ['calm', 'relaxation', 'peace']
+            },
+            {
+                name: 'Snake Plant',
+                features: [0.9, 0.1, 0.9],
+                mood: ['low maintenance', 'focus', 'clean air']
+            },
+            {
+                name: 'Jasmine',
+                features: [0.3, 0.8, 0.4],
+                mood: ['energy', 'positivity', 'fragrance']
+            }
+        ];
+
+        // Simple neural network model
+        const model = tf.sequential({
+            layers: [
+                tf.layers.dense({inputShape: [3], units: 16, activation: 'relu'}),
+                tf.layers.dense({units: 8, activation: 'relu'}),
+                tf.layers.dense({units: 3, activation: 'softmax'})
+            ]
+        });
+
+        model.compile({
+            optimizer: 'adam',
+            loss: 'categoricalCrossentropy',
+            metrics: ['accuracy']
+        });
+
+        // Mock training data (replace with real dataset)
+        const trainData = {
+            inputs: tf.tensor2d(plants.map(p => p.features)),
+            labels: tf.tensor2d([[1,0,0], [0,1,0], [0,0,1]]) // One-hot encoded
+        };
+
+        // Train model (in real app, pre-train and load)
+        async function trainModel() {
+            await model.fit(trainData.inputs, trainData.labels, {
+                epochs: 100,
+                validationSplit: 0.2,
+                callbacks: {
+                    onEpochEnd: (epoch, logs) => {
+                        console.log(`Epoch ${epoch}: loss = ${logs.loss}`);
+                    }
+                }
+            });
+        }
+
+        // Mood analysis handler
+        async function analyzeMood() {
+            const userText = document.querySelector('.mood-input').value;
+            
+            // Simple text analysis (replace with proper NLP in production)
+            const features = {
+                stress: userText.toLowerCase().includes('stress') ? 0.8 : 0.1,
+                energy: userText.toLowerCase().includes('energy') ? 0.9 : 0.1,
+                air: userText.toLowerCase().includes('air') ? 0.7 : 0.1
+            };
+
+            // Predict
+            await trainModel(); // Remove this in production (use pre-trained)
+            const prediction = model.predict(tf.tensor2d([Object.values(features)]));
+            const results = await prediction.data();
+            
+            showRecommendations(results);
+        }
+
+        // Display recommendations
+        function showRecommendations(scores) {
+            const sortedPlants = plants
+                .map((p, i) => ({...p, score: scores[i]}))
+                .sort((a, b) => b.score - a.score);
+
+            const plantHTML = sortedPlants.map(plant => `
+                <div class="col-md-4 mb-4">
+                    <div class="card plant-card">
+                        <div class="card-body">
+                            <h5>${plant.name}</h5>
+                            <p>Mood benefits: ${plant.mood.join(', ')}</p>
+                            <small>Confidence: ${(plant.score * 100).toFixed(1)}%</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('plantResults').innerHTML = plantHTML;
+            document.getElementById('recommendations').style.display = 'block';
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

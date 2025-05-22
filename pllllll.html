@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Finder - Login</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: #f0f0f0;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s ease, background 0.3s ease;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .switch-text {
+            text-align: center;
+            margin-top: 20px;
+            color: #7f8c8d;
+        }
+
+        .switch-text a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="tabs">
+            <button class="tab active" onclick="showForm('login')">Login</button>
+            <button class="tab" onclick="showForm('register')">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form">
+            <div class="error-message" id="login-error"></div>
+            <form onsubmit="return handleLogin(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="login-username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+            <p class="switch-text">Don't have an account? <a onclick="showForm('register')">Register here</a></p>
+        </div>
+
+        <!-- Registration Form -->
+        <div id="register-form" style="display: none;">
+            <div class="error-message" id="register-error"></div>
+            <form onsubmit="return handleRegister(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="register-username" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="register-password" required>
+                </div>
+                <button type="submit">Register</button>
+            </form>
+            <p class="switch-text">Already have an account? <a onclick="showForm('login')">Login here</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Show selected form and update tabs
+        function showForm(formType) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll(`.tab:${formType === 'login' ? 'first-child' : 'last-child'}`)
+                .forEach(tab => tab.classList.add('active'));
+
+            document.getElementById('login-form').style.display = formType === 'login' ? 'block' : 'none';
+            document.getElementById('register-form').style.display = formType === 'register' ? 'block' : 'none';
+        }
+
+        // Handle registration
+        function handleRegister(event) {
+            event.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const errorElement = document.getElementById('register-error');
+
+            // Simple validation
+            if (password.length < 6) {
+                errorElement.textContent = 'Password must be at least 6 characters!';
+                errorElement.style.display = 'block';
+                return false;
+            }
+
+            // Check if user exists
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            if (users.some(user => user.username === username)) {
+                errorElement.textContent = 'Username already exists!';
+                errorElement.style.display = 'block';
+                return false;
+            }
+
+            // Store user (Note: In real applications, never store passwords in plain text!)
+            users.push({ username, email, password });
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            alert('Registration successful! Please login.');
+            showForm('login');
+            return false;
+        }
+
+        // Handle login
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const errorElement = document.getElementById('login-error');
+
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                // Store current user session
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                window.location.href = 'index.html'; // Redirect to main page
+            } else {
+                errorElement.textContent = 'Invalid username or password!';
+                errorElement.style.display = 'block';
+            }
+            return false;
+        }
+
+        // Check if user is already logged in
+        if (localStorage.getItem('currentUser')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
+<button onclick="logout()" style="position: absolute; top: 20px; right: 20px;">Logout</button>
+
+<script>
+function logout() {
+    localStorage.removeItem('currentUser');
+    window.location.href = 'login.html';
+}
+</script>
+<div id="user-greeting" style="text-align: center; margin-bottom: 10px;"></div>
+
+<script>
+window.onload = () => {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (user) {
+        document.getElementById('user-greeting').textContent = `Welcome, ${user.username}!`;
+    }
+};
+</script>
